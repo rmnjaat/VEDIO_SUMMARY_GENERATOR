@@ -4,6 +4,17 @@ from .providers.base import TranscriptionProvider
 from .providers import PROVIDERS
 
 
+def unique_path(path: str) -> str:
+    """If *path* already exists, append _1, _2, … before the extension."""
+    if not os.path.exists(path):
+        return path
+    base, ext = os.path.splitext(path)
+    counter = 1
+    while os.path.exists(f"{base}_{counter}{ext}"):
+        counter += 1
+    return f"{base}_{counter}{ext}"
+
+
 class TranscriptGenerator:
 
     def __init__(self, video_path: str, provider_name: str, api_key: str, output_dir: str):
@@ -48,14 +59,14 @@ class TranscriptGenerator:
         result = self.provider.transcribe(chunks)
         print("  Transcription complete.\n")
 
-        # Step 3: Save output files
+        # Step 3: Save output files (never overwrite existing)
         print("Step 3: Saving transcripts...")
-        transcript_path = os.path.join(
+        transcript_path = unique_path(os.path.join(
             self.output_dir, f"{self.video.name}_transcript.txt"
-        )
-        timestamps_path = os.path.join(
+        ))
+        timestamps_path = unique_path(os.path.join(
             self.output_dir, f"{self.video.name}_timestamps.txt"
-        )
+        ))
 
         with open(transcript_path, "w", encoding="utf-8") as f:
             f.write(result.text)
