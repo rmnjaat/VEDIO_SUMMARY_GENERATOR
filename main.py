@@ -1,7 +1,7 @@
 """
 Video Transcript Generator
 Usage:
-    python main.py <video_path> --provider <groq|assemblyai|gemini>
+    python main.py <video_path> --provider <groq|assemblyai|gemini|mlx>
 """
 
 import argparse
@@ -25,7 +25,7 @@ API_KEYS = {
     "gemini": os.environ.get("GEMINI_API_KEY", ""),
 }
 
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "transcripts")
 
 
 def main():
@@ -34,13 +34,16 @@ def main():
     parser.add_argument(
         "--provider", "-p",
         required=True,
-        choices=["groq", "assemblyai", "gemini"],
+        choices=["groq", "assemblyai", "gemini", "mlx"],
         help="Transcription provider to use",
     )
     args = parser.parse_args()
 
+    # MLX runs locally — no API key needed
+    NO_KEY_PROVIDERS = {"mlx"}
+
     api_key = API_KEYS.get(args.provider, "")
-    if not api_key:
+    if not api_key and args.provider not in NO_KEY_PROVIDERS:
         print(f"Error: No API key found for '{args.provider}'.")
         print(f"Set it in main.py or via environment variable {args.provider.upper()}_API_KEY")
         sys.exit(1)
