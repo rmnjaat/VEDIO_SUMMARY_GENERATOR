@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video Summary Generator</title>
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a2e;
+    --surface2: #16213e;
+    --accent: #e94560;
+    --accent2: #0f3460;
+    --text: #eee;
+    --text-dim: #999;
+    --text-dark: #666;
+    --border: #2a2a4a;
+    --green: #00d97e;
+    --yellow: #ffc107;
+    --blue: #4dabf7;
+    --purple: #b197fc;
+    --radius: 10px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 40px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header h1 { font-size: 1.4rem; font-weight: 700; }
+  .header .sub { color: var(--text-dim); font-size: 0.82rem; margin-top: 2px; }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 0; margin-top: 16px; }
+  .tab {
+    padding: 10px 28px;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 0.88rem;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .tab:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+  .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+  .tab .step-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(255,255,255,0.15); font-size: 0.72rem; font-weight: 700;
+  }
+  .tab.active .step-num { background: rgba(255,255,255,0.3); }
+
+  /* ── Container ── */
+  .container { max-width: 1000px; margin: 0 auto; padding: 30px 20px 60px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 0.82rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--text-dim); margin-bottom: 14px;
+  }
+
+  /* ── Form elements ── */
+  label.field {
+    display: block; margin-bottom: 16px;
+  }
+  label.field .lbl {
+    display: block; font-size: 0.82rem; color: var(--text-dim);
+    margin-bottom: 5px; font-weight: 500;
+  }
+  label.field .hint {
+    display: block; font-size: 0.72rem; color: var(--text-dark);
+    margin-top: 3px;
+  }
+  select, input[type="text"], input[type="number"] {
+    width: 100%; padding: 10px 14px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 0.88rem;
+    outline: none; transition: border-color 0.2s;
+  }
+  select:focus, input:focus { border-color: var(--accent); }
+  select option { background: var(--bg); color: var(--text); }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* ── Command box ── */
+  .cmd-box {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.82rem;
+    color: var(--green);
+    position: relative;
+    word-break: break-all;
+    line-height: 1.8;
+    margin-top: 10px;
+  }
+  .copy-btn {
+    position: absolute; top: 8px; right: 8px;
+    background: var(--accent2); border: 1px solid var(--border);
+    color: var(--text-dim); padding: 4px 12px;
+    border-radius: 6px; cursor: pointer; font-size: 0.72rem;
+    transition: all 0.2s;
+  }
+  .copy-btn:hover { background: var(--accent); color: #fff; }
+  .copy-btn.copied { background: var(--green); color: #000; }
+
+  /* ── Provider cards ── */
+  .provider-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  .provider-card {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px; cursor: pointer;
+    transition: all 0.2s; text-align: center;
+  }
+  .provider-card:hover { border-color: var(--blue); }
+  .provider-card.selected { border-color: var(--accent); box-shadow: 0 0 12px rgba(233,69,96,0.2); }
+  .provider-card .p-name { font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; }
+  .provider-card .p-desc { font-size: 0.7rem; color: var(--text-dim); line-height: 1.4; }
+  .provider-card .p-badge {
+    display: inline-block; margin-top: 6px; padding: 2px 8px;
+    border-radius: 10px; font-size: 0.65rem; font-weight: 600;
+  }
+
+  /* ── Mode cards ── */
+  .mode-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+  .mode-card {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .mode-card:hover { border-color: var(--blue); }
+  .mode-card.selected { border-color: var(--accent); box-shadow: 0 0 12px rgba(233,69,96,0.2); }
+  .mode-card .m-name { font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; }
+  .mode-card .m-stages { font-size: 0.72rem; color: var(--blue); margin-bottom: 6px; }
+  .mode-card .m-desc { font-size: 0.75rem; color: var(--text-dim); line-height: 1.4; }
+
+  /* ── Video card ── */
+  .video-list { display: flex; flex-direction: column; gap: 8px; }
+  .video-item {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 16px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .video-item:hover { border-color: var(--blue); }
+  .video-item.selected { border-color: var(--accent); box-shadow: 0 0 12px rgba(233,69,96,0.2); }
+  .video-item .v-icon { font-size: 1.6rem; }
+  .video-item .v-name { font-weight: 600; font-size: 0.9rem; }
+  .video-item .v-meta { font-size: 0.75rem; color: var(--text-dim); }
+
+  /* ── Output files ── */
+  .section-label {
+    font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--text-dim);
+    margin-top: 24px; margin-bottom: 12px;
+    padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  .file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+  }
+  .file-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .file-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .file-card.active-card { border-color: var(--accent); box-shadow: 0 0 16px rgba(233,69,96,0.2); }
+  .file-card .f-icon { font-size: 1.5rem; margin-bottom: 8px; }
+  .file-card .f-name { font-weight: 600; font-size: 0.88rem; word-break: break-all; }
+  .file-card .f-desc { color: var(--text-dim); font-size: 0.75rem; margin-top: 4px; }
+  .file-card .f-size { color: var(--text-dark); font-size: 0.72rem; margin-top: 2px; }
+  .file-card .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 20px;
+    font-size: 0.65rem; font-weight: 600; margin-top: 6px;
+  }
+  .badge-json { background: rgba(77,171,247,0.15); color: var(--blue); }
+  .badge-txt { background: rgba(0,217,126,0.15); color: var(--green); }
+  .badge-audio { background: rgba(255,193,7,0.15); color: var(--yellow); }
+  .badge-blog { background: rgba(177,151,252,0.15); color: var(--purple); }
+  .badge-doc { background: rgba(0,217,126,0.15); color: var(--green); }
+
+  /* ── Search ── */
+  .search-bar {
+    width: 100%; padding: 10px 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text); font-size: 0.88rem;
+    margin-bottom: 16px; outline: none; transition: border-color 0.2s;
+  }
+  .search-bar:focus { border-color: var(--accent); }
+  .search-bar::placeholder { color: #444; }
+
+  /* ── Preview panel ── */
+  .file-preview {
+    display: none; margin-top: 20px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .file-preview.visible { display: block; }
+  .preview-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 20px; background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  .preview-header .preview-title { font-weight: 600; font-size: 0.9rem; }
+  .preview-close {
+    background: none; border: 1px solid var(--border); color: var(--text-dim);
+    width: 28px; height: 28px; border-radius: 6px; cursor: pointer;
+    font-size: 1rem; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .preview-close:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .preview-body { padding: 20px; max-height: 65vh; overflow-y: auto; }
+  .preview-body pre {
+    white-space: pre-wrap; word-wrap: break-word;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.82rem; color: var(--text-dim); line-height: 1.7;
+  }
+
+  /* ── Doc/Blog preview ── */
+  .doc-preview .doc-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+  .doc-preview .doc-tags { font-size: 0.78rem; color: var(--accent); margin-bottom: 18px; }
+  .doc-preview .doc-tags span {
+    display: inline-block; background: rgba(233,69,96,0.12);
+    padding: 2px 10px; border-radius: 12px; margin: 0 4px 4px 0;
+  }
+  .doc-preview .doc-heading {
+    font-size: 1.1rem; font-weight: 600; margin-top: 22px; margin-bottom: 8px;
+    padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  }
+  .doc-preview .doc-subheading {
+    font-size: 0.92rem; font-weight: 600; color: var(--blue);
+    margin-top: 14px; margin-bottom: 6px;
+  }
+  .doc-preview .doc-para {
+    font-size: 0.86rem; color: var(--text-dim); margin-bottom: 10px; line-height: 1.7;
+  }
+  .doc-preview .doc-list-item {
+    font-size: 0.84rem; color: var(--text-dim); padding: 3px 0 3px 16px; position: relative;
+  }
+  .doc-preview .doc-list-item::before {
+    content: ''; position: absolute; left: 4px; top: 11px;
+    width: 5px; height: 5px; background: var(--accent); border-radius: 50%;
+  }
+  .doc-preview .doc-example {
+    background: rgba(255,255,255,0.03); border-left: 3px solid var(--yellow);
+    padding: 8px 14px; font-size: 0.82rem; color: var(--yellow);
+    margin: 8px 0; border-radius: 0 6px 6px 0; line-height: 1.6;
+  }
+  .doc-preview .doc-figure {
+    background: rgba(77,171,247,0.08); border-left: 3px solid var(--blue);
+    padding: 8px 14px; font-size: 0.82rem; color: var(--blue);
+    font-style: italic; margin: 8px 0; border-radius: 0 6px 6px 0;
+  }
+  .doc-preview .code-wrapper {
+    margin: 12px 0; border-radius: 8px; overflow: hidden;
+    border: 1px solid #333;
+  }
+  .doc-preview .code-header {
+    background: #1e1e2e; padding: 6px 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid #333;
+  }
+  .doc-preview .code-lang {
+    font-size: 0.72rem; font-weight: 600; color: var(--text-dim);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .doc-preview .code-lang::before { content: '</> '; opacity: 0.5; }
+  .doc-preview .code-copy-btn {
+    background: none; border: 1px solid #444; color: var(--text-dim);
+    padding: 2px 10px; border-radius: 5px; cursor: pointer;
+    font-size: 0.68rem; transition: all 0.2s;
+  }
+  .doc-preview .code-copy-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .doc-preview .code-body {
+    background: #0d1117; padding: 14px 18px; overflow-x: auto;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.8rem; line-height: 1.7; color: #c9d1d9;
+    white-space: pre; margin: 0;
+  }
+  .doc-preview .code-body .ck { color: #ff7b72; }
+  .doc-preview .code-body .cs { color: #a5d6ff; }
+  .doc-preview .code-body .cf { color: #d2a8ff; }
+  .doc-preview .code-body .cc { color: #8b949e; font-style: italic; }
+  .doc-preview .code-body .cn { color: #79c0ff; }
+  .doc-preview .doc-inline-code {
+    background: rgba(255,255,255,0.1); padding: 2px 7px;
+    border-radius: 4px; font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.82em; color: #79c0ff; border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  /* ── JSON tree ── */
+  .json-tree { font-family: 'SF Mono', monospace; font-size: 0.82rem; }
+  .json-tree details { margin-left: 16px; }
+  .json-tree summary { cursor: pointer; color: var(--blue); padding: 2px 0; list-style: none; }
+  .json-tree summary::-webkit-details-marker { display: none; }
+  .json-tree summary::before { content: '\25b6 '; font-size: 0.6rem; color: var(--text-dim); margin-right: 4px; }
+  .json-tree details[open] > summary::before { content: '\25bc '; }
+  .json-tree .json-leaf { margin-left: 16px; padding: 1px 0; color: var(--text-dim); }
+  .json-tree .jk { color: var(--blue); }
+  .json-tree .js { color: var(--green); }
+  .json-tree .jn { color: var(--yellow); }
+  .json-tree .jb { color: var(--accent); }
+  .json-tree .jnull { color: #555; }
+
+  /* ── Timestamp preview ── */
+  .preview-ts-line { display: flex; gap: 10px; padding: 3px 0; font-size: 0.82rem; }
+  .preview-ts-time { color: var(--blue); font-family: 'SF Mono', monospace; font-size: 0.78rem; min-width: 70px; }
+  .preview-ts-text { color: var(--text-dim); }
+
+  /* ── Audio player ── */
+  .audio-player-wrap { padding: 20px; text-align: center; }
+  .audio-player-wrap audio { width: 100%; max-width: 480px; margin-top: 10px; }
+  .audio-player-wrap .audio-label { color: var(--text-dim); font-size: 0.82rem; }
+
+  /* ── Pipeline visual ── */
+  .pipeline-visual {
+    display: flex; align-items: center; gap: 0;
+    padding: 16px 0; margin-bottom: 10px; overflow-x: auto;
+  }
+  .pv-step {
+    background: var(--accent2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 14px; font-size: 0.75rem;
+    white-space: nowrap; text-align: center;
+  }
+  .pv-step .pv-label { font-weight: 600; color: var(--text); }
+  .pv-step .pv-sub { color: var(--text-dim); font-size: 0.68rem; }
+  .pv-arrow { color: var(--text-dark); font-size: 1.1rem; padding: 0 6px; flex-shrink: 0; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #444; }
+
+  /* ── Empty state ── */
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Video Summary Generator</h1>
+  <div class="sub">Video &rarr; Transcript &rarr; Structured Analysis &rarr; Blog / Doc / Content Tree</div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('step1',this)">
+      <span class="step-num">1</span> Video Processing
+    </button>
+    <button class="tab" onclick="switchTab('step2',this)">
+      <span class="step-num">2</span> Analysis
+    </button>
+    <button class="tab" onclick="switchTab('step3',this)">
+      <span class="step-num">3</span> Outputs
+    </button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 1 : VIDEO PROCESSING                                  -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="panel active" id="panel-step1">
+
+  <!-- Pipeline visual -->
+  <div class="pipeline-visual">
+    <div class="pv-step"><div class="pv-label">Video File</div><div class="pv-sub">.mp4 .mkv .avi</div></div>
+    <div class="pv-arrow">&rarr;</div>
+    <div class="pv-step"><div class="pv-label">Audio Extract</div><div class="pv-sub">ffmpeg</div></div>
+    <div class="pv-arrow">&rarr;</div>
+    <div class="pv-step"><div class="pv-label">Chunking</div><div class="pv-sub">size-based split</div></div>
+    <div class="pv-arrow">&rarr;</div>
+    <div class="pv-step"><div class="pv-label">Transcription</div><div class="pv-sub">selected provider</div></div>
+    <div class="pv-arrow">&rarr;</div>
+    <div class="pv-step"><div class="pv-label">Output</div><div class="pv-sub">transcript + timestamps</div></div>
+  </div>
+
+  <!-- Video selection -->
+  <div class="card">
+    <div class="card-title">Select Video</div>
+    <div class="video-list" id="video-list"></div>
+    <div style="margin-top:10px;font-size:0.75rem;color:var(--text-dark)">
+      Videos are loaded from the <code>VEID/</code> folder
+    </div>
+  </div>
+
+  <!-- Provider selection -->
+  <div class="card">
+    <div class="card-title">Select Transcription Provider</div>
+    <div class="provider-grid" id="provider-grid"></div>
+  </div>
+
+  <!-- Generated command -->
+  <div class="card">
+    <div class="card-title">Run Command</div>
+    <div style="font-size:0.82rem;color:var(--text-dim);margin-bottom:6px">
+      Copy and run this in your terminal:
+    </div>
+    <div class="cmd-box" id="cmd-step1">
+      <span id="cmd-step1-text">python main.py "./VEID/12.mp4" --provider groq</span>
+      <button class="copy-btn" onclick="copyCmd('cmd-step1-text', this)">Copy</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 2 : ANALYSIS (PERSONIFICATION)                        -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-step2">
+
+  <!-- Mode selection -->
+  <div class="card">
+    <div class="card-title">Select Output Mode</div>
+    <div class="mode-grid" id="mode-grid"></div>
+  </div>
+
+  <!-- Transcript selection -->
+  <div class="card">
+    <div class="card-title">Select Transcript (from Step 1 output)</div>
+    <label class="field">
+      <span class="lbl">Transcript File</span>
+      <select id="cfg-transcript" onchange="updateCmd2()"></select>
+      <span class="hint">Transcripts generated by Step 1 appear here</span>
+    </label>
+  </div>
+
+  <!-- Configuration -->
+  <div class="card">
+    <div class="card-title">Configuration</div>
+    <div class="row">
+      <label class="field">
+        <span class="lbl">Title</span>
+        <input type="text" id="cfg-title" placeholder="Auto-detected from filename" oninput="updateCmd2()">
+        <span class="hint">Title for the generated content. Leave blank for auto-detect.</span>
+      </label>
+      <label class="field">
+        <span class="lbl">Duration</span>
+        <input type="text" id="cfg-duration" placeholder="e.g. 04:00:00" oninput="updateCmd2()">
+        <span class="hint">Total video duration in HH:MM:SS format</span>
+      </label>
+    </div>
+    <div class="row-3">
+      <label class="field">
+        <span class="lbl">Chunk Size (words)</span>
+        <input type="number" id="cfg-chunk" value="4000" min="500" max="10000" oninput="updateCmd2()">
+        <span class="hint">Max words per chunk. Larger = fewer LLM calls but may miss detail.</span>
+      </label>
+      <label class="field">
+        <span class="lbl">Model</span>
+        <select id="cfg-model" onchange="updateCmd2()">
+          <option value="gemini-2.5-flash" selected>gemini-2.5-flash (fast, cheap)</option>
+          <option value="gemini-2.5-pro">gemini-2.5-pro (best quality)</option>
+          <option value="gemini-2.0-flash">gemini-2.0-flash (legacy)</option>
+        </select>
+        <span class="hint">Gemini model used for all analysis stages</span>
+      </label>
+      <label class="field">
+        <span class="lbl">Output Dir (optional)</span>
+        <input type="text" id="cfg-outdir" placeholder="Auto-generated" oninput="updateCmd2()">
+        <span class="hint">Override the run folder path</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Pipeline visual (changes with mode) -->
+  <div class="card">
+    <div class="card-title">Pipeline Steps</div>
+    <div class="pipeline-visual" id="pipeline-step2"></div>
+  </div>
+
+  <!-- Generated command -->
+  <div class="card">
+    <div class="card-title">Run Command</div>
+    <div style="font-size:0.82rem;color:var(--text-dim);margin-bottom:6px">
+      Copy and run this in your terminal:
+    </div>
+    <div class="cmd-box" id="cmd-step2">
+      <span id="cmd-step2-text">python analyze.py "output/12_timestamps.txt" --mode blog --title "..."</span>
+      <button class="copy-btn" onclick="copyCmd('cmd-step2-text', this)">Copy</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 3 : OUTPUTS                                           -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-step3">
+  <input class="search-bar" id="file-search" placeholder="Search files by name, type, or description..." oninput="filterFiles()">
+  <div id="files-container"></div>
+  <div class="file-preview" id="file-preview">
+    <div class="preview-header">
+      <span class="preview-title" id="preview-title">File Preview</span>
+      <button class="preview-close" onclick="closePreview()">&times;</button>
+    </div>
+    <div class="preview-body" id="preview-body"></div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════════════════════
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════
+// TAB 1 : VIDEO PROCESSING
+// ══════════════════════════════════════════════════════════════
+let videos = [
+  // Loaded dynamically from VEID/manifest.json — run `python refresh.py` to update
+];
+
+const providers = [
+  { id: 'groq',       name: 'Groq',       desc: 'Whisper large-v3. Fast, free tier. Auto-chunks at 24 MB.', badge: 'FREE', badgeColor: 'var(--green)' },
+  { id: 'assemblyai', name: 'AssemblyAI',  desc: 'Universal-3-pro. Best accuracy. Handles large files natively.', badge: 'BEST', badgeColor: 'var(--blue)' },
+  { id: 'gemini',     name: 'Gemini',      desc: 'Gemini 1.5 Pro. File upload API. Good for Gemini ecosystem.', badge: 'API', badgeColor: 'var(--yellow)' },
+  { id: 'mlx',        name: 'MLX (Local)', desc: 'Runs locally on Apple Silicon. No API key. Variable speed.', badge: 'LOCAL', badgeColor: 'var(--purple)' },
+];
+
+let selectedVideo = 0;
+let selectedProvider = 'groq';
+
+function renderVideos() {
+  const el = document.getElementById('video-list');
+  el.innerHTML = videos.map((v, i) => `
+    <div class="video-item ${i === selectedVideo ? 'selected' : ''}" onclick="selectVideo(${i})">
+      <div class="v-icon">\uD83C\uDFAC</div>
+      <div>
+        <div class="v-name">${v.name}</div>
+        <div class="v-meta">${v.size} &bull; ${v.duration}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectVideo(i) { selectedVideo = i; renderVideos(); updateCmd1(); }
+
+function renderProviders() {
+  const el = document.getElementById('provider-grid');
+  el.innerHTML = providers.map(p => `
+    <div class="provider-card ${p.id === selectedProvider ? 'selected' : ''}" onclick="selectProvider('${p.id}')">
+      <div class="p-name">${p.name}</div>
+      <div class="p-desc">${p.desc}</div>
+      <span class="p-badge" style="background:${p.badgeColor}22;color:${p.badgeColor}">${p.badge}</span>
+    </div>
+  `).join('');
+}
+
+function selectProvider(id) { selectedProvider = id; renderProviders(); updateCmd1(); }
+
+function updateCmd1() {
+  const v = videos[selectedVideo];
+  document.getElementById('cmd-step1-text').textContent =
+    `python main.py "./${v.path}" --provider ${selectedProvider}`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// TAB 2 : ANALYSIS
+// ══════════════════════════════════════════════════════════════
+const modes = [
+  {
+    id: 'tree', name: 'Content Tree', icon: '\uD83C\uDF33',
+    stages: 'Scanner \u2192 Architect \u2192 JSON',
+    desc: 'Hierarchical JSON with topics, subtopics, concepts, Q&A, glossary, cross-references. Best for structured data.',
+    steps: [
+      { label: 'Scanner', sub: 'per chunk \u2192 JSON' },
+      { label: 'Architect', sub: 'merge \u2192 tree' },
+    ]
+  },
+  {
+    id: 'doc', name: 'Documentation', icon: '\uD83D\uDCD6',
+    stages: 'Scanner \u2192 Outliner \u2192 Writer',
+    desc: 'Clean plain-text doc page (Kafka-style). Title, tags, headings, body, examples. Single file output.',
+    steps: [
+      { label: 'Scanner', sub: 'per chunk \u2192 JSON' },
+      { label: 'Outliner', sub: 'plan skeleton' },
+      { label: 'Section Writer', sub: 'per section \u2192 text' },
+    ]
+  },
+  {
+    id: 'blog', name: 'Blog Posts', icon: '\u270D\uFE0F',
+    stages: 'Scanner \u2192 Splitter \u2192 Writer \u2192 Finalizer',
+    desc: 'Comprehensive blog posts split by topic. Adds examples, fills gaps, covers every detail. Multiple files if needed.',
+    steps: [
+      { label: 'Scanner', sub: 'per chunk \u2192 JSON' },
+      { label: 'Topic Splitter', sub: 'find N topics' },
+      { label: 'Section Writer', sub: 'write + transcript' },
+      { label: 'Finalizer', sub: 'fill gaps' },
+    ]
+  },
+];
+
+let selectedMode = 'blog';
+
+let transcripts = [
+  // Loaded dynamically from output/transcripts.json — run `python refresh.py` to update
+];
+
+function renderModes() {
+  const el = document.getElementById('mode-grid');
+  el.innerHTML = modes.map(m => `
+    <div class="mode-card ${m.id === selectedMode ? 'selected' : ''}" onclick="selectMode('${m.id}')">
+      <div class="m-name">${m.icon} ${m.name}</div>
+      <div class="m-stages">${m.stages}</div>
+      <div class="m-desc">${m.desc}</div>
+    </div>
+  `).join('');
+}
+
+function selectMode(id) { selectedMode = id; renderModes(); renderPipeline2(); updateCmd2(); }
+
+function renderTranscripts() {
+  const sel = document.getElementById('cfg-transcript');
+  sel.innerHTML = transcripts.map(t =>
+    `<option value="${t.path}">${t.name} (${t.size})</option>`
+  ).join('');
+}
+
+function renderPipeline2() {
+  const mode = modes.find(m => m.id === selectedMode);
+  const el = document.getElementById('pipeline-step2');
+  let html = '<div class="pv-step"><div class="pv-label">Transcript</div><div class="pv-sub">.txt file</div></div>';
+  html += '<div class="pv-arrow">\u2192</div>';
+  html += '<div class="pv-step"><div class="pv-label">Chunking</div><div class="pv-sub">4000 words</div></div>';
+  for (const s of mode.steps) {
+    html += '<div class="pv-arrow">\u2192</div>';
+    html += `<div class="pv-step"><div class="pv-label">${s.label}</div><div class="pv-sub">${s.sub}</div></div>`;
+  }
+  html += '<div class="pv-arrow">\u2192</div>';
+  const outLabel = selectedMode === 'tree' ? '.json' : selectedMode === 'blog' ? 'N x .txt' : '.txt';
+  html += `<div class="pv-step"><div class="pv-label">Output</div><div class="pv-sub">${outLabel}</div></div>`;
+  el.innerHTML = html;
+}
+
+function updateCmd2() {
+  const transcript = document.getElementById('cfg-transcript').value;
+  const title = document.getElementById('cfg-title').value.trim();
+  const duration = document.getElementById('cfg-duration').value.trim();
+  const chunk = document.getElementById('cfg-chunk').value;
+  const model = document.getElementById('cfg-model').value;
+  const outdir = document.getElementById('cfg-outdir').value.trim();
+
+  let cmd = `python analyze.py "${transcript}" --mode ${selectedMode}`;
+  if (title) cmd += ` --title "${title}"`;
+  if (duration) cmd += ` --duration "${duration}"`;
+  if (chunk && chunk !== '4000') cmd += ` --chunk-size ${chunk}`;
+  if (model !== 'gemini-2.5-flash') cmd += ` --model ${model}`;
+  if (outdir) cmd += ` --output-dir "${outdir}"`;
+
+  document.getElementById('cmd-step2-text').textContent = cmd;
+}
+
+// ══════════════════════════════════════════════════════════════
+// TAB 3 : OUTPUTS
+// ══════════════════════════════════════════════════════════════
+let outputFiles = [
+  // Loaded dynamically from output/outputs.json — run `python refresh.py` to update
+];
+
+const catMeta = {
+  blog:       { label: 'Blog Posts',        icon: '\u270D\uFE0F', badge: 'blog' },
+  doc:        { label: 'Documentation',     icon: '\uD83D\uDCD6', badge: 'doc' },
+  analysis:   { label: 'Analysis',          icon: '\uD83D\uDCC4', badge: 'json' },
+  transcript: { label: 'Source Transcripts', icon: '\uD83D\uDCDD', badge: 'txt' },
+  audio:      { label: 'Audio Files',        icon: '\uD83C\uDFA7', badge: 'audio' },
+};
+
+let activeFileIdx = -1;
+let filteredOutputFiles = [...outputFiles];
+
+function renderOutputFiles() {
+  const container = document.getElementById('files-container');
+  const cats = ['blog', 'doc', 'analysis', 'transcript', 'audio'];
+  let html = '';
+  for (const cat of cats) {
+    const catFiles = filteredOutputFiles.filter(f => f.category === cat);
+    if (!catFiles.length) continue;
+    const m = catMeta[cat];
+    html += `<div class="section-label">${m.icon} ${m.label} (${catFiles.length})</div><div class="file-grid">`;
+    for (const f of catFiles) {
+      const ri = outputFiles.indexOf(f);
+      html += `
+        <div class="file-card ${ri === activeFileIdx ? 'active-card' : ''}" onclick="openFile(${ri})">
+          <div class="f-icon">${m.icon}</div>
+          <div class="f-name">${f.name}</div>
+          <div class="f-desc">${f.desc}</div>
+          <div class="f-size">${f.size}</div>
+          <span class="badge badge-${m.badge}">${m.badge.toUpperCase()}</span>
+        </div>`;
+    }
+    html += '</div>';
+  }
+  if (!html) html = '<div class="empty-state">No files match your search.</div>';
+  container.innerHTML = html;
+}
+
+function filterFiles() {
+  const q = document.getElementById('file-search').value.toLowerCase();
+  filteredOutputFiles = q
+    ? outputFiles.filter(f => f.name.toLowerCase().includes(q) || f.desc.toLowerCase().includes(q) || f.category.includes(q))
+    : [...outputFiles];
+  renderOutputFiles();
+}
+
+// ── File preview ──
+async function openFile(idx) {
+  const f = outputFiles[idx];
+  activeFileIdx = idx;
+  renderOutputFiles();
+
+  const preview = document.getElementById('file-preview');
+  const body = document.getElementById('preview-body');
+  document.getElementById('preview-title').textContent = f.name;
+  body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-dim)">Loading...</div>';
+  preview.classList.add('visible');
+  preview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  if (f.type === 'audio') {
+    body.innerHTML = `<div class="audio-player-wrap"><div class="audio-label">${f.name}</div><audio controls preload="metadata" src="${f.path}"></audio></div>`;
+    return;
+  }
+
+  try {
+    const text = await (await fetch(f.path)).text();
+    if (f.type === 'json') renderJsonPreview(body, text);
+    else if (f.category === 'blog' || f.category === 'doc' || f.type === 'litcoffee') renderDocPreview(body, text);
+    else if (f.subtype === 'timestamps') renderTimestampPreview(body, text);
+    else renderPlainPreview(body, text);
+  } catch (e) {
+    body.innerHTML = `<div class="empty-state">Could not load file.<br><br><input type="file" onchange="manualOpen(event,${idx})"></div>`;
+  }
+}
+
+function manualOpen(ev, idx) {
+  const file = ev.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const body = document.getElementById('preview-body');
+    const f = outputFiles[idx]; const text = e.target.result;
+    if (f.type === 'json') renderJsonPreview(body, text);
+    else if (f.category === 'blog' || f.category === 'doc') renderDocPreview(body, text);
+    else if (f.subtype === 'timestamps') renderTimestampPreview(body, text);
+    else renderPlainPreview(body, text);
+  };
+  reader.readAsText(file);
+}
+
+function closePreview() {
+  document.getElementById('file-preview').classList.remove('visible');
+  activeFileIdx = -1; renderOutputFiles();
+}
+
+// ── JSON tree ──
+function renderJsonPreview(body, text) {
+  try {
+    const d = JSON.parse(text);
+    body.innerHTML = '<div class="json-tree"></div>';
+    body.querySelector('.json-tree').appendChild(buildJsonTree(d, 'root', true));
+  } catch(e) { body.innerHTML = `<pre>${esc(text)}</pre>`; }
+}
+function buildJsonTree(v, k, root) {
+  if (v === null) { const e = document.createElement('div'); e.className='json-leaf'; e.innerHTML=`<span class="jk">${esc(k)}</span>: <span class="jnull">null</span>`; return e; }
+  if (Array.isArray(v)) {
+    if (!v.length) { const e=document.createElement('div'); e.className='json-leaf'; e.innerHTML=`<span class="jk">${esc(k)}</span>: <span class="jnull">[]</span>`; return e; }
+    const d=document.createElement('details'); if(root) d.open=true;
+    const s=document.createElement('summary'); s.innerHTML=`<span class="jk">${esc(k)}</span> <span style="color:#666">[${v.length}]</span>`;
+    d.appendChild(s); v.forEach((x,i)=>d.appendChild(buildJsonTree(x,String(i),false))); return d;
+  }
+  if (typeof v==='object') {
+    const keys=Object.keys(v); if(!keys.length){const e=document.createElement('div');e.className='json-leaf';e.innerHTML=`<span class="jk">${esc(k)}</span>: <span class="jnull">{}</span>`;return e;}
+    const d=document.createElement('details'); if(root)d.open=true;
+    const s=document.createElement('summary'); const pk=keys.find(x=>typeof v[x]==='string'); const pt=pk?`: "${trunc(v[pk],50)}"`:'';
+    s.innerHTML=`<span class="jk">${esc(k)}</span> <span style="color:#666">{${keys.length}}${esc(pt)}</span>`;
+    d.appendChild(s); keys.forEach(x=>d.appendChild(buildJsonTree(v[x],x,false))); return d;
+  }
+  const e=document.createElement('div'); e.className='json-leaf';
+  if(typeof v==='string') e.innerHTML=`<span class="jk">${esc(k)}</span>: <span class="js">"${esc(trunc(v,180))}"</span>`;
+  else if(typeof v==='number') e.innerHTML=`<span class="jk">${esc(k)}</span>: <span class="jn">${v}</span>`;
+  else if(typeof v==='boolean') e.innerHTML=`<span class="jk">${esc(k)}</span>: <span class="jb">${v}</span>`;
+  else e.innerHTML=`<span class="jk">${esc(k)}</span>: ${esc(String(v))}`;
+  return e;
+}
+
+// ── Code detection ──
+function isCodeLine(line) {
+  const t = line.trim();
+  if (!t) return false;
+  if (/^(from |import |def |class |if |elif |else:|for |while |return |raise |try:|except |finally:|with |yield |async |await |pass$|break$|continue$)/.test(t)) return true;
+  if (/^\w[\w.\[\]]*\s*(=|\+=|-=|\*=|\/=)\s/.test(t) && !/ : /.test(t) && t.length < 200) return true;
+  if (/^\w[\w.]*\(.*\)\s*$/.test(t) && t.length < 200) return true;
+  if (/^#\s/.test(t) && t.length < 120) return true;
+  if (/^print\s*\(/.test(t)) return true;
+  if (/^@\w/.test(t)) return true;
+  if (/^(\s{4,}|\t)/.test(line) && t.length < 200) return true;
+  return false;
+}
+
+function highlightCode(codeText) {
+  // Token-based highlighter: split each line into tokens FIRST, then colorize.
+  // This avoids the chained-regex problem where spans match inside other spans.
+  const KW = new Set(['from','import','def','class','if','elif','else','for','while',
+    'return','raise','try','except','finally','with','yield','async','await',
+    'pass','break','continue','in','is','not','and','or','as','lambda','print']);
+  const CONST = new Set(['True','False','None','self']);
+
+  return codeText.split('\n').map(rawLine => {
+    // Full-line comment
+    if (/^\s*#/.test(rawLine)) {
+      return '<span class="cc">' + esc(rawLine) + '</span>';
+    }
+
+    // Tokenize: walk char by char, pull out strings, comments, words, numbers, rest
+    let out = '';
+    let j = 0;
+    while (j < rawLine.length) {
+      const ch = rawLine[j];
+
+      // String (single or double quote, with optional f-prefix)
+      if ((ch === '"' || ch === "'") || ((ch === 'f' || ch === 'F') && j + 1 < rawLine.length && (rawLine[j+1] === '"' || rawLine[j+1] === "'"))) {
+        let isF = (ch === 'f' || ch === 'F') && (rawLine[j+1] === '"' || rawLine[j+1] === "'");
+        let start = j;
+        if (isF) j++; // skip 'f'
+        let quote = rawLine[j]; j++;
+        while (j < rawLine.length && rawLine[j] !== quote) {
+          if (rawLine[j] === '\\') j++; // skip escaped
+          j++;
+        }
+        if (j < rawLine.length) j++; // closing quote
+        let tok = rawLine.substring(start, j);
+        if (isF) {
+          out += '<span class="cf">f</span><span class="cs">' + esc(tok.substring(1)) + '</span>';
+        } else {
+          out += '<span class="cs">' + esc(tok) + '</span>';
+        }
+        continue;
+      }
+
+      // Comment
+      if (ch === '#') {
+        out += '<span class="cc">' + esc(rawLine.substring(j)) + '</span>';
+        break;
+      }
+
+      // Word (identifier or keyword)
+      if (/[a-zA-Z_]/.test(ch)) {
+        let start = j;
+        while (j < rawLine.length && /[\w]/.test(rawLine[j])) j++;
+        let word = rawLine.substring(start, j);
+        if (KW.has(word)) out += '<span class="ck">' + word + '</span>';
+        else if (CONST.has(word)) out += '<span class="ck">' + word + '</span>';
+        else out += esc(word);
+        continue;
+      }
+
+      // Number
+      if (/\d/.test(ch)) {
+        let start = j;
+        while (j < rawLine.length && /[\d_.]/.test(rawLine[j])) j++;
+        out += '<span class="cn">' + esc(rawLine.substring(start, j)) + '</span>';
+        continue;
+      }
+
+      // Everything else (operators, spaces, punctuation)
+      out += esc(ch);
+      j++;
+    }
+
+    // Post-pass: color function/class names after def/class
+    out = out.replace(/(ck">def<\/span>\s+)([a-zA-Z_]\w*)/g, '$1<span class="cf">$2</span>');
+    out = out.replace(/(ck">class<\/span>\s+)([a-zA-Z_]\w*)/g, '$1<span class="cf">$2</span>');
+
+    return out;
+  }).join('\n');
+}
+
+let _codeBlockId = 0;
+function makeCodeBlock(codeText) {
+  const id = 'codeblock-' + (++_codeBlockId);
+  const highlighted = highlightCode(codeText);
+  return `<div class="code-wrapper">
+    <div class="code-header">
+      <span class="code-lang">Python</span>
+      <button class="code-copy-btn" onclick="copyCodeBlock('${id}',this)">Copy</button>
+    </div>
+    <pre class="code-body" id="${id}">${highlighted}</pre>
+  </div>`;
+}
+
+function copyCodeBlock(id, btn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+  });
+}
+
+function renderInlineCode(text) {
+  return text.replace(/`([^`]+)`/g, '<span class="doc-inline-code">$1</span>');
+}
+
+// ── Doc / Blog preview ──
+function renderDocPreview(body, text) {
+  const lines = text.split('\n');
+  let html = '<div class="doc-preview">';
+  let i = 0;
+
+  // Line 1: title
+  if (lines.length && lines[0].trim()) {
+    html += `<div class="doc-title">${renderInlineCode(esc(lines[0].trim()))}</div>`;
+    i = 1;
+  }
+
+  // Line 2: tags
+  if (i < lines.length && lines[i].startsWith('Tags:')) {
+    const tags = lines[i].replace('Tags:','').split(',').map(t=>t.trim()).filter(Boolean);
+    html += `<div class="doc-tags">${tags.map(t=>`<span>${esc(t)}</span>`).join('')}</div>`;
+    i++;
+  }
+
+  while (i < lines.length) {
+    const line = lines[i];
+    const t = line.trim();
+
+    // Empty line
+    if (!t) { i++; continue; }
+
+    // Code block: collect consecutive code lines
+    if (isCodeLine(line)) {
+      let codeLines = [];
+      while (i < lines.length && (isCodeLine(lines[i]) || !lines[i].trim())) {
+        if (!lines[i].trim()) {
+          let hasMoreCode = false;
+          for (let j = i + 1; j < Math.min(i + 3, lines.length); j++) {
+            if (isCodeLine(lines[j])) { hasMoreCode = true; break; }
+          }
+          if (!hasMoreCode) break;
+        }
+        codeLines.push(lines[i]);
+        i++;
+      }
+      while (codeLines.length && !codeLines[codeLines.length-1].trim()) codeLines.pop();
+      if (codeLines.length) {
+        html += makeCodeBlock(codeLines.join('\n'));
+      }
+      continue;
+    }
+
+    // Figure
+    if (/^\s*Figure\s*:/i.test(line)) {
+      html += `<div class="doc-figure">${renderInlineCode(esc(t))}</div>`;
+      i++; continue;
+    }
+
+    // Example
+    if (/^\s*Example\s*:/i.test(line)) {
+      html += `<div class="doc-example">${renderInlineCode(esc(t))}</div>`;
+      i++; continue;
+    }
+
+    // Key-value examples
+    if (/^\w[\w\s]*:\s*"/.test(t) && t.length < 200) {
+      html += `<div class="doc-example">${esc(t)}</div>`;
+      i++; continue;
+    }
+
+    // Inline sub-heading (Label : body)
+    const cm = line.match(/^(.{3,60}?)\s:\s(.+)/);
+    if (cm && cm[2].length > 20) {
+      html += `<div class="doc-subheading">${renderInlineCode(esc(cm[1].trim()))}</div>`;
+      html += `<div class="doc-para">${renderInlineCode(esc(cm[2].trim()))}</div>`;
+      i++; continue;
+    }
+
+    // Heading detection
+    const isShort = t.length < 120 && t.length > 2;
+    const startsUp = /^[A-Z]/.test(t);
+    const next = i+1 < lines.length ? lines[i+1] : '';
+    const nextEmpty = !next.trim();
+    const nextLong = next.trim().length > 80;
+    const skip = /^(To |The |This |A |An |In |For |It |However|While |But |Even |When |If )/.test(t);
+
+    if (isShort && startsUp && (nextEmpty||nextLong) && !skip && t.length < 100) {
+      html += `<div class="doc-heading">${renderInlineCode(esc(t))}</div>`;
+      i++; continue;
+    }
+
+    // List items
+    if (t.startsWith('To ') && t.endsWith('.') && t.length < 300) {
+      html += `<div class="doc-list-item">${renderInlineCode(esc(t))}</div>`;
+      i++; continue;
+    }
+
+    // Body paragraph (with inline code support)
+    html += `<div class="doc-para">${renderInlineCode(esc(t))}</div>`;
+    i++;
+  }
+
+  html += '</div>';
+  body.innerHTML = html;
+}
+
+// ── Timestamps preview ──
+function renderTimestampPreview(body, text) {
+  const all = text.split('\n').filter(l=>l.trim());
+  const show = all.slice(0, 500);
+  let html = `<div style="color:var(--text-dim);font-size:0.78rem;margin-bottom:10px">Showing ${show.length} of ${all.length} lines</div>`;
+  html += show.map(line => {
+    const m = line.match(/^\[([^\]]+)\]\s*(.*)$/);
+    return m ? `<div class="preview-ts-line"><span class="preview-ts-time">${m[1]}</span><span class="preview-ts-text">${esc(m[2])}</span></div>`
+             : `<div class="preview-ts-line"><span class="preview-ts-text">${esc(line)}</span></div>`;
+  }).join('');
+  body.innerHTML = html;
+}
+
+// ── Plain text preview ──
+function renderPlainPreview(body, text) {
+  const p = text.length > 50000 ? text.substring(0, 50000) + '\n\n... (truncated)' : text;
+  body.innerHTML = `<pre>${esc(p)}</pre>`;
+}
+
+// ── Helpers ──
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function trunc(s, n) { return s.length > n ? s.substring(0, n) + '...' : s; }
+
+function copyCmd(id, btn) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// LOAD MANIFESTS (generated by `python refresh.py`)
+// ══════════════════════════════════════════════════════════════
+async function loadManifests() {
+  // Load videos
+  try {
+    const r = await fetch('VEID/manifest.json');
+    if (r.ok) { videos = await r.json(); }
+  } catch(e) {}
+  if (!videos.length) {
+    // Fallback if no manifest yet
+    videos = [{ name: '(run python refresh.py)', size: '-', path: '' }];
+  }
+  renderVideos(); updateCmd1();
+
+  // Load transcripts
+  try {
+    const r = await fetch('output/transcripts.json');
+    if (r.ok) { transcripts = await r.json(); }
+  } catch(e) {}
+  if (!transcripts.length) {
+    transcripts = [{ name: '(no transcripts yet)', path: '', size: '-' }];
+  }
+  renderTranscripts(); updateCmd2();
+
+  // Load output files
+  try {
+    const r = await fetch('output/outputs.json');
+    if (r.ok) { outputFiles = await r.json(); }
+  } catch(e) {}
+  filteredOutputFiles = [...outputFiles];
+  renderOutputFiles();
+}
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+renderProviders();
+renderModes();
+renderPipeline2();
+loadManifests();
+</script>
+</body>
+</html>
