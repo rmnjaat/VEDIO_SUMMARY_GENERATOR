@@ -1,0 +1,26 @@
+Collecting flask
+  Obtaining dependency information for flask from https://files.pythonhosted.org/packages/7f/9c/34f6962f9b9e9c71f6e5ed806e0d0ff03c9d1b0b2340088a0cf4bce09b18/flask-3.1.3-py3-none-any.whl.metadata
+  Downloading flask-3.1.3-py3-none-any.whl.metadata (3.2 kB)
+Collecting blinker>=1.9.0 (from flask)
+  Obtaining dependency information for blinker>=1.9.0 from https://files.pythonhosted.org/packages/10/cb/f2ad4230dc2eb1a74edf38f1a38b9b52277f75bef262d8908e60d957e13c/blinker-1.9.0-py3-none-any.whl.metadata
+  Using cached blinker-1.9.0-py3-none-any.whl.metadata (1.6 kB)
+Requirement already satisfied: click>=8.1.3 in ./VEDIO_SUMMARY_GENERATOR_env/lib/python3.12/site-packages (from flask) (8.3.1)
+Collecting itsdangerous>=2.2.0 (from flask)
+  Obtaining dependency information for itsdangerous>=2.2.0 from https://files.pythonhosted.org/packages/04/96/92447566d16df59b2a776c0fb82dbc4d9e07cd95062562af01e408583fc4/itsdangerous-2.2.0-py3-none-any.whl.metadata
+  Using cached itsdangerous-2.2.0-py3-none-any.whl.metadata (1.9 kB)
+Requirement already satisfied: jinja2>=3.1.2 in ./VEDIO_SUMMARY_GENERATOR_env/lib/python3.12/site-packages (from flask) (3.1.6)
+Requirement already satisfied: markupsafe>=2.1.1 in ./VEDIO_SUMMARY_GENERATOR_env/lib/python3.12/site-packages (from flask) (3.0.3)
+Collecting werkzeug>=3.1.0 (from flask)
+  Obtaining dependency information for werkzeug>=3.1.0 from https://files.pythonhosted.org/packages/4d/ec/d58832f89ede95652fd01f4f24236af7d32b70cab2196dfcc2d2fd13c5c2/werkzeug-3.1.6-py3-none-any.whl.metadata
+  Downloading werkzeug-3.1.6-py3-none-any.whl.metadata (4.0 kB)
+Downloading flask-3.1.3-py3-none-any.whl (103 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 103.4/103.4 kB 2.3 MB/s eta 0:00:00
+Using cached blinker-1.9.0-py3-none-any.whl (8.5 kB)
+Using cached itsdangerous-2.2.0-py3-none-any.whl (16 kB)
+Downloading werkzeug-3.1.6-py3-none-any.whl (225 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 225.2/225.2 kB 7.1 MB/s eta 0:00:00
+Installing collected packages: werkzeug, itsdangerous, blinker, flask
+Successfully installed blinker-1.9.0 flask-3.1.3 itsdangerous-2.2.0 werkzeug-3.1.6
+
+[notice] A new release of pip is available: 23.2.1 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
