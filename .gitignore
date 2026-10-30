@@ -9,4 +9,4 @@ __pycache__/
 *VEID
 
 # Moved to separate repo
-manual_to_experiment/
+manual_to_experiment/.DS_Store

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/opt/anaconda3/envs/video_summary_generator/bin/python -c \"import TTS; print\\(''TTS OK:'', TTS.__file__\\)\")",
+      "Bash(/opt/anaconda3/envs/video_summary_generator/bin/python -c \":*)",
+      "Bash(/opt/anaconda3/envs/video_summary_generator/bin/pip install:*)",
+      "Bash(gh auth:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/ramanjangu/Desktop"
+    ]
+  }
+}

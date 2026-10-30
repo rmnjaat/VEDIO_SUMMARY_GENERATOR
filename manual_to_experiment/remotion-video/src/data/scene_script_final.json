@@ -1,0 +1,9 @@
+[
+  {
+    "scene_id": 0,
+    "type": "intro",
+    "narration": "Placeholder intro scene.",
+    "visual_hint": "product shot",
+    "estimated_duration_sec": 5
+  }
+]
